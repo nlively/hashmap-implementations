@@ -87,15 +87,15 @@ void hashmap_put(HashMap* map, char* key, char* value) {
     EntryList *current = head;
     while(current != NULL) {
         if (strcmp(current->key, key) == 0) {
-            current->value = value;
+            current->value = strdup(value);
             return;
         }
         current = current->next;
     } 
 
     EntryList *new_entry = malloc(sizeof(EntryList));
-    new_entry->key = key;
-    new_entry->value = value;
+    new_entry->key = strdup(key);
+    new_entry->value = strdup(value);
     new_entry->next = head;
 
     map->buckets[index] = new_entry;
@@ -103,6 +103,7 @@ void hashmap_put(HashMap* map, char* key, char* value) {
 
     // trigger resize if we are nearing capacity
     if ((float)map->size / map->capacity > 0.75f) {
+        printf("hashmap has reached %d, at least 75 percent of its capacity. resizing\n", map->size);
         hashmap_resize(map);
     }
 }
@@ -145,12 +146,43 @@ void hashmap_delete(HashMap *map, char* key) {
     }
 }
 
+void hashmap_dump(HashMap *map) {
+    printf("hashmap_dump()\n");
+    for (int i = 0; i < map->capacity; i++) {
+        EntryList *current = map->buckets[i];
+
+        while(current != NULL) {
+            printf("%s: %s\n", current->key, current->value);
+            current = current->next;
+        }
+    }
+}
+
+void print_name(HashMap *map) {
+    printf("hello, %s\n", hashmap_get(map, "name"));
+}
+
 int main(void) {
     HashMap *map = new_hashmap(100);
 
     hashmap_put(map, "name", "Noah");
+    print_name(map);
 
-    printf("hello, %s\n", hashmap_get(map, "name"));
+    hashmap_put(map, "name", "Evan");
+    print_name(map);
+
+    hashmap_delete(map, "name");
+    print_name(map);
+
+    for (int i = 0; i < 120; i++) {
+        char key[8];
+        char val[9];
+        sprintf(key, "item%d", i);
+        sprintf(val, "value%d", i);
+        hashmap_put(map, key, val);
+    }
+
+    hashmap_dump(map);
 
     hashmap_cleanup(map);
 
